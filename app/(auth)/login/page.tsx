@@ -1,15 +1,15 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 
 function LoginContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
-  const supabase = createClient()
 
   async function signInWithGoogle() {
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
