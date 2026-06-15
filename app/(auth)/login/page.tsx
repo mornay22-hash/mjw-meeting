@@ -1,28 +1,16 @@
-'use client'
+export default function LoginPage() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const redirectTo = process.env.NEXT_PUBLIC_APP_URL
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`
+    : 'https://mjw-meeting.vercel.app/api/auth/callback'
 
-import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+  const scopes = [
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/drive.file',
+  ].join(' ')
 
-function LoginContent() {
-  const searchParams = useSearchParams()
-  const error = searchParams.get('error')
-
-  async function signInWithGoogle() {
-    const { createClient } = await import('@/lib/supabase/client')
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
-        scopes: [
-          'https://www.googleapis.com/auth/calendar.readonly',
-          'https://www.googleapis.com/auth/gmail.send',
-          'https://www.googleapis.com/auth/drive.file',
-        ].join(' '),
-        queryParams: { access_type: 'offline', prompt: 'consent' },
-      },
-    })
-  }
+  const oauthUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&scopes=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent`
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
@@ -33,14 +21,8 @@ function LoginContent() {
           <p className="text-sm text-gray-500">No Noise. Just Signal.</p>
         </div>
 
-        {error && (
-          <div className="bg-red-950 border border-red-800 rounded-lg px-4 py-3 text-sm text-red-300">
-            Authentication failed. Please try again.
-          </div>
-        )}
-
-        <button
-          onClick={signInWithGoogle}
+        <a
+          href={oauthUrl}
           className="w-full flex items-center justify-center gap-3 bg-white text-gray-900 font-medium py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -50,20 +32,12 @@ function LoginContent() {
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
           Sign in with Google
-        </button>
+        </a>
 
         <p className="text-center text-xs text-gray-600">
           MJW Environment — Confidential
         </p>
       </div>
     </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginContent />
-    </Suspense>
   )
 }
