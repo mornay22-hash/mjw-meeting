@@ -97,11 +97,9 @@ export default function MinutesClient({
   function updateAction(i: number, field: keyof ActionItem, value: string) {
     setActions(prev => prev.map((a, idx) => idx === i ? { ...a, [field]: value } : a))
   }
-
   function addAction() {
     setActions(prev => [...prev, { item: '', owner: '', due_date: '' }])
   }
-
   function removeAction(i: number) {
     setActions(prev => prev.filter((_, idx) => idx !== i))
   }
@@ -109,80 +107,120 @@ export default function MinutesClient({
   const hasDraft = agenda || discussion || decisions || actions.length > 0
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="max-w-2xl space-y-6">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Minutes</p>
-          <h1 className="text-xl font-semibold text-white">{meeting.title}</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-[10px] font-bold tracking-[0.25em] text-white/25 uppercase mb-2">Meeting Minutes</p>
+          <h1 className="text-2xl font-semibold text-white tracking-tight">{meeting.title}</h1>
+          <p className="text-sm text-white/35 mt-1.5">
             {new Date(meeting.meeting_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            {meeting.attendees?.length > 0 && ` · ${meeting.attendees.join(', ')}`}
+            {meeting.attendees?.length > 0 && (
+              <span className="before:content-['·'] before:mx-2 before:text-white/20">
+                {meeting.attendees.join(', ')}
+              </span>
+            )}
           </p>
         </div>
         {!hasDraft && hasTranscript && (
           <button
             onClick={draftMinutes}
             disabled={drafting}
-            className="shrink-0 bg-white text-gray-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="shrink-0 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
           >
-            {drafting ? 'Drafting…' : 'Draft with AI'}
+            {drafting ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Drafting…
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+                Draft with AI
+              </>
+            )}
           </button>
         )}
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
-
-      {!hasDraft && !hasTranscript && (
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 text-center">
-          <p className="text-gray-400 text-sm">No transcript found. Start typing minutes manually or go back to record a transcript.</p>
+      {error && (
+        <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+          <p className="text-sm text-red-300">{error}</p>
         </div>
       )}
 
+      {/* No transcript state */}
+      {!hasDraft && !hasTranscript && (
+        <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-8 text-center">
+          <p className="text-white/50 text-sm">No transcript found.</p>
+          <p className="text-white/25 text-sm mt-1">Start typing minutes manually below.</p>
+        </div>
+      )}
+
+      {/* Minutes form */}
       {(hasDraft || !hasTranscript) && (
         <div className="space-y-4">
-          <Field label="Agenda" value={agenda} onChange={setAgenda} rows={3} />
-          <Field label="Discussion Summary" value={discussion} onChange={setDiscussion} rows={5} />
-          <Field label="Decisions Made" value={decisions} onChange={setDecisions} rows={4} />
+          <MinutesField label="Agenda" value={agenda} onChange={setAgenda} rows={3} />
+          <MinutesField label="Discussion Summary" value={discussion} onChange={setDiscussion} rows={5} />
+          <MinutesField label="Decisions Made" value={decisions} onChange={setDecisions} rows={4} />
 
-          <div className="space-y-2">
+          {/* Action Items */}
+          <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold tracking-widest text-gray-500 uppercase">Action Items</p>
-              <button onClick={addAction} className="text-xs text-gray-400 hover:text-white transition-colors">+ Add</button>
+              <h3 className="text-[10px] font-bold tracking-widest text-white/35 uppercase">Action Items</h3>
+              <button
+                onClick={addAction}
+                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add item
+              </button>
             </div>
             {actions.length === 0 && (
-              <p className="text-sm text-gray-600">No action items</p>
+              <p className="text-sm text-white/20 py-2">No action items yet</p>
             )}
-            {actions.map((a, i) => (
-              <div key={i} className="bg-gray-900 border border-gray-800 rounded-lg p-3 grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center">
-                <input
-                  value={a.item}
-                  onChange={e => updateAction(i, 'item', e.target.value)}
-                  placeholder="Action item"
-                  className="bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none"
-                />
-                <input
-                  value={a.owner}
-                  onChange={e => updateAction(i, 'owner', e.target.value)}
-                  placeholder="Owner"
-                  className="bg-transparent text-sm text-gray-400 placeholder-gray-600 focus:outline-none w-24"
-                />
-                <input
-                  type="date"
-                  value={a.due_date}
-                  onChange={e => updateAction(i, 'due_date', e.target.value)}
-                  className="bg-transparent text-sm text-gray-400 focus:outline-none w-32"
-                />
-                <button onClick={() => removeAction(i)} className="text-gray-600 hover:text-red-400 transition-colors text-xs">✕</button>
-              </div>
-            ))}
+            <div className="space-y-2">
+              {actions.map((a, i) => (
+                <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center bg-white/[0.03] border border-white/5 rounded-xl px-3 py-2.5">
+                  <input
+                    value={a.item}
+                    onChange={e => updateAction(i, 'item', e.target.value)}
+                    placeholder="Action item"
+                    className="bg-transparent text-sm text-white/80 placeholder-white/20 focus:outline-none"
+                  />
+                  <input
+                    value={a.owner}
+                    onChange={e => updateAction(i, 'owner', e.target.value)}
+                    placeholder="Owner"
+                    className="bg-transparent text-sm text-white/40 placeholder-white/20 focus:outline-none w-24"
+                  />
+                  <input
+                    type="date"
+                    value={a.due_date}
+                    onChange={e => updateAction(i, 'due_date', e.target.value)}
+                    className="bg-transparent text-sm text-white/40 focus:outline-none w-32 [color-scheme:dark]"
+                  />
+                  <button onClick={() => removeAction(i)} className="text-white/15 hover:text-red-400 transition-colors">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <Field label="Next Steps" value={nextSteps} onChange={setNextSteps} rows={3} />
+          <MinutesField label="Next Steps" value={nextSteps} onChange={setNextSteps} rows={3} />
 
-          <div className="flex gap-3 pt-2">
+          {/* Actions bar */}
+          <div className="flex gap-3 pt-1">
             <button
               onClick={saveMinutes}
-              className="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="bg-white/5 hover:bg-white/8 text-white/60 hover:text-white/80 text-sm px-4 py-2.5 rounded-xl transition-all border border-white/5"
             >
               Save draft
             </button>
@@ -190,42 +228,54 @@ export default function MinutesClient({
               <button
                 onClick={draftMinutes}
                 disabled={drafting}
-                className="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                className="bg-white/5 hover:bg-white/8 text-white/60 hover:text-white/80 text-sm px-4 py-2.5 rounded-xl transition-all border border-white/5 disabled:opacity-50"
               >
                 {drafting ? 'Regenerating…' : 'Regenerate'}
               </button>
             )}
             <button
               onClick={() => setShowSendForm(true)}
-              className="bg-white text-gray-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20 ml-auto"
             >
-              Send minutes →
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+              </svg>
+              Send minutes
             </button>
           </div>
 
+          {/* Send form */}
           {showSendForm && (
-            <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-3">
-              <p className="text-sm font-medium text-white">Send minutes</p>
-              <input
-                value={recipients}
-                onChange={e => setRecipients(e.target.value)}
-                placeholder="email@example.com, another@example.com"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-500"
-              />
+            <div className="rounded-2xl bg-white/[0.03] border border-indigo-500/20 p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-white">Send minutes via email</h3>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold tracking-widest text-white/30 uppercase">Recipients</label>
+                <input
+                  value={recipients}
+                  onChange={e => setRecipients(e.target.value)}
+                  placeholder="email@example.com, another@example.com"
+                  className="w-full bg-white/[0.04] border border-white/8 focus:border-indigo-500/50 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all"
+                />
+              </div>
               {sendError && <p className="text-sm text-red-400">{sendError}</p>}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowSendForm(false)}
-                  className="bg-gray-800 text-white text-sm px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                  className="bg-white/5 hover:bg-white/8 text-white/60 text-sm px-4 py-2.5 rounded-xl transition-all border border-white/5"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSend}
                   disabled={sending}
-                  className="bg-white text-gray-900 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
                 >
-                  {sending ? 'Sending…' : 'Confirm send'}
+                  {sending ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Sending…
+                    </>
+                  ) : 'Confirm send'}
                 </button>
               </div>
             </div>
@@ -236,7 +286,7 @@ export default function MinutesClient({
   )
 }
 
-function Field({
+function MinutesField({
   label,
   value,
   onChange,
@@ -248,13 +298,13 @@ function Field({
   rows?: number
 }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs font-semibold tracking-widest text-gray-500 uppercase">{label}</p>
+    <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-5 space-y-3">
+      <h3 className="text-[10px] font-bold tracking-widest text-white/35 uppercase">{label}</h3>
       <textarea
         value={value}
         onChange={e => onChange(e.target.value)}
         rows={rows}
-        className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-sm text-gray-200 placeholder-gray-700 resize-none focus:outline-none focus:border-gray-600"
+        className="w-full bg-transparent text-sm text-white/70 placeholder-white/15 resize-none focus:outline-none"
       />
     </div>
   )
