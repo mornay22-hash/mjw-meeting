@@ -1,8 +1,12 @@
-export default function LoginPage() {
+import { headers } from 'next/headers'
+
+export default async function LoginPage() {
+  const headersList = await headers()
+  const host = headersList.get('host') || 'mjw-meeting.vercel.app'
+  const protocol = host.includes('localhost') ? 'http' : 'https'
+  const redirectTo = `${protocol}://${host}/api/auth/callback`
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const redirectTo = process.env.NEXT_PUBLIC_APP_URL
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
-    : 'https://mjw-meeting.vercel.app/auth/callback'
 
   const scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',
