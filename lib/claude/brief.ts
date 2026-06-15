@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { BriefJSON } from '@/types'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const openai = new OpenAI({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function generateBrief(
   title: string,
@@ -9,11 +9,14 @@ export async function generateBrief(
   attendees: string[],
   description: string
 ): Promise<BriefJSON> {
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1000,
-    system: 'You are MJW Meeting OS. Generate a concise pre-meeting brief. Return JSON only. No preamble.',
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    response_format: { type: 'json_object' },
     messages: [
+      {
+        role: 'system',
+        content: 'You are MJW Meeting OS. Generate a concise pre-meeting brief. Return JSON only. No preamble.',
+      },
       {
         role: 'user',
         content: `Meeting: ${title}
@@ -32,7 +35,6 @@ Return JSON:
     ],
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
-  return JSON.parse(cleaned) as BriefJSON
+  const text = response.choices[0].message.content || ''
+  return JSON.parse(text) as BriefJSON
 }

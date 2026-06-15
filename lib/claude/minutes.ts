@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { MinutesJSON } from '@/types'
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const openai = new OpenAI({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function draftMinutes(
   title: string,
@@ -10,12 +10,14 @@ export async function draftMinutes(
   attendees: string[],
   transcript: string
 ): Promise<MinutesJSON> {
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 2000,
-    system:
-      'You are MJW Meeting OS. Draft structured meeting minutes. Extract decisions and actions precisely. No hallucination. Return JSON only.',
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    response_format: { type: 'json_object' },
     messages: [
+      {
+        role: 'system',
+        content: 'You are MJW Meeting OS. Draft structured meeting minutes. Extract decisions and actions precisely. No hallucination. Return JSON only.',
+      },
       {
         role: 'user',
         content: `Meeting: ${title}
@@ -35,7 +37,6 @@ Return JSON:
     ],
   })
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
-  const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
-  return JSON.parse(cleaned) as MinutesJSON
+  const text = response.choices[0].message.content || ''
+  return JSON.parse(text) as MinutesJSON
 }
