@@ -1,8 +1,8 @@
 export default function LoginPage() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const redirectTo = process.env.NEXT_PUBLIC_APP_URL
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`
-    : 'https://mjw-meeting.vercel.app/api/auth/callback'
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
+    : 'https://mjw-meeting.vercel.app/auth/callback'
 
   const scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',

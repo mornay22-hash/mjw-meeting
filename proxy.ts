@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
 
-  if (path.startsWith('/login') || path.startsWith('/api/auth')) {
+  if (path.startsWith('/login') || path.startsWith('/api/auth') || path.startsWith('/auth/callback')) {
     return NextResponse.next()
   }
 
