@@ -14,6 +14,8 @@ export default function BriefClient({
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [manualMode, setManualMode] = useState(false)
+  const [manualText, setManualText] = useState('')
   const [brief, setBrief] = useState<BriefJSON | null>(
     existingBrief
       ? {
@@ -89,32 +91,49 @@ export default function BriefClient({
       </div>
 
       {/* Empty state */}
-      {!brief && (
-        <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-10 text-center space-y-5">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto">
-            <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
+      {!brief && !manualMode && (
+        <div style={{ borderRadius: 12, border: '1px solid rgba(236,232,221,0.1)', background: 'var(--ink2)', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* AI option */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', paddingBottom: 20, borderBottom: '1px solid rgba(236,232,221,0.08)' }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(90,127,214,0.1)', border: '1px solid rgba(90,127,214,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--blue-lt)" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--paper)', margin: '0 0 4px' }}>Generate AI Brief</p>
+              <p style={{ fontSize: 12, color: 'var(--slate)', margin: 0 }}>Uses OpenAI to create context, agenda and questions. Requires OpenAI credits.</p>
+            </div>
+            <button onClick={generateBrief} disabled={loading} style={{ fontSize: 13, fontWeight: 600, color: 'var(--paper)', background: 'rgba(90,127,214,0.15)', border: '1px solid rgba(90,127,214,0.3)', borderRadius: 8, padding: '9px 20px', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+              {loading ? 'Generating…' : 'Generate with AI'}
+            </button>
+            {error && <p style={{ fontSize: 12, color: '#e05c5c', margin: 0, maxWidth: '100%', wordBreak: 'break-word' }}>{error}</p>}
           </div>
-          <div>
-            <p className="text-white/70 font-medium">Generate your AI brief</p>
-            <p className="text-sm text-white/30 mt-1">Get context, a draft agenda, and key questions to raise</p>
+
+          {/* Manual option */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(201,162,75,0.08)', border: '1px solid rgba(201,162,75,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--gold)" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>
+            </div>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--paper)', margin: '0 0 4px' }}>Paste Your Own Brief</p>
+              <p style={{ fontSize: 12, color: 'var(--slate)', margin: 0 }}>Run your meeting context through Claude or ChatGPT, then paste the result here.</p>
+            </div>
+            <button onClick={() => setManualMode(true)} style={{ fontSize: 13, fontWeight: 600, color: '#000', background: 'linear-gradient(120deg,var(--gold-lt),var(--gold))', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer' }}>
+              Paste Brief Manually
+            </button>
           </div>
-          <button
-            onClick={generateBrief}
-            disabled={loading}
-            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
-          >
-            {loading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Generating…
-              </>
-            ) : 'Generate brief'}
-          </button>
-          {error && (
-            <p className="text-sm text-red-400">{error}</p>
-          )}
+        </div>
+      )}
+
+      {/* Manual paste mode */}
+      {!brief && manualMode && (
+        <div style={{ borderRadius: 12, border: '1px solid rgba(201,162,75,0.25)', background: 'var(--ink2)', padding: '24px' }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--paper)', marginBottom: 4 }}>Paste your brief below</p>
+          <p style={{ fontSize: 12, color: 'var(--slate)', marginBottom: 16 }}>Copy your brief from Claude or ChatGPT and paste it here. It will be saved as your meeting context.</p>
+          <textarea value={manualText} onChange={e => setManualText(e.target.value)} placeholder="Paste your AI-generated brief here…" rows={14} style={{ width: '100%', background: 'var(--ink3)', border: '1px solid rgba(236,232,221,0.1)', borderRadius: 8, padding: '12px 14px', color: 'var(--paper)', fontSize: 13, outline: 'none', resize: 'vertical', lineHeight: 1.7, boxSizing: 'border-box' }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button onClick={() => { setBrief({ context_summary: manualText, agenda_draft: [], questions_to_raise: [], watch_points: [] }) }} disabled={!manualText.trim()} style={{ fontSize: 13, fontWeight: 600, color: '#000', background: 'linear-gradient(120deg,var(--gold-lt),var(--gold))', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer' }}>Save Brief</button>
+            <button onClick={() => setManualMode(false)} style={{ fontSize: 13, color: 'var(--slate)', background: 'var(--ink3)', border: '1px solid rgba(236,232,221,0.1)', borderRadius: 8, padding: '9px 14px', cursor: 'pointer' }}>Back</button>
+          </div>
         </div>
       )}
 

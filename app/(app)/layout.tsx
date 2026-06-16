@@ -5,66 +5,55 @@ import Link from 'next/link'
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) redirect('/login')
 
   const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'MJW'
   const avatar = user.user_metadata?.avatar_url
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--black)', color: 'var(--paper)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--black)', color: 'var(--paper)' }}>
       {/* Sidebar */}
-      <aside className="w-60 shrink-0 flex flex-col" style={{ background: 'var(--ink)', borderRight: '1px solid var(--line)' }}>
+      <aside style={{ width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--ink)', borderRight: '1px solid var(--line)' }}>
 
         {/* Brand */}
-        <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--line)' }}>
-          <Link href="/" className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/mjw-logo.png"
-              alt="MJW"
-              width={32}
-              height={32}
-              className="rounded-full object-cover shrink-0"
-            />
-            <div>
-              <p className="text-xs font-semibold tracking-[0.06em]" style={{ color: 'var(--paper)', fontFamily: 'var(--font-inter, Inter, system-ui)' }}>
-                MJW Meeting
-              </p>
-              <p className="text-[9px] tracking-[0.2em] uppercase" style={{ color: 'var(--slate-dk)', fontFamily: 'var(--font-jetbrains-mono, monospace)' }}>
-                Meeting Command
-              </p>
+        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--line)' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <img src="/mjw-logo.png" alt="MJW" width={30} height={30} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--paper)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>MJW Meeting</p>
+              <p style={{ fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--slate-dk)', margin: 0, fontFamily: 'var(--font-jetbrains-mono, monospace)' }}>Meeting Command</p>
             </div>
           </Link>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
+        <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
           <NavLink href="/" icon={<HomeIcon />} label="Dashboard" />
           <NavLink href="/meeting/new" icon={<PlusIcon />} label="New Meeting" highlight />
-          <div className="pt-5 pb-1.5 px-2">
-            <span className="text-[9px] font-semibold tracking-[0.22em] uppercase" style={{ color: 'var(--slate)', fontFamily: 'var(--font-jetbrains-mono, monospace)' }}>
-              Workspace
-            </span>
-          </div>
+
+          <NavSection label="Workspace" />
+          <NavLink href="/calendar" icon={<CalendarIcon />} label="Calendar" />
+          <NavLink href="/notes" icon={<NotesIcon />} label="Notes" />
+          <NavLink href="/tasks" icon={<TasksIcon />} label="Tasks" />
+          <NavLink href="/documents" icon={<DocsIcon />} label="Documents" />
+
+          <NavSection label="History" />
           <NavLink href="/archive" icon={<ArchiveIcon />} label="Archive" />
         </nav>
 
         {/* User */}
-        <div className="px-3 py-4" style={{ borderTop: '1px solid var(--line)' }}>
-          <div className="flex items-center gap-3 px-2 py-2 rounded-xl">
+        <div style={{ padding: '10px 8px', borderTop: '1px solid var(--line)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 10 }}>
             {avatar ? (
-              <img src={avatar} alt={name} className="w-7 h-7 rounded-full object-cover shrink-0" style={{ border: '1px solid var(--line)' }} />
+              <img src={avatar} alt={name} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--line)' }} />
             ) : (
-              <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-xs font-bold" style={{ background: 'linear-gradient(135deg, var(--gold-dk), var(--gold))', color: '#000' }}>
+              <div style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: 'linear-gradient(135deg, var(--gold-dk), var(--gold))', color: '#000' }}>
                 {name[0].toUpperCase()}
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate" style={{ color: 'var(--paper)' }}>{name}</p>
-            </div>
+            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--slate)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
             <form action="/api/auth/signout" method="POST">
-              <button type="submit" title="Sign out" style={{ color: 'var(--slate-dk)' }}>
+              <button type="submit" title="Sign out" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate-dk)', padding: 2, display: 'flex' }}>
                 <SignOutIcon />
               </button>
             </form>
@@ -73,8 +62,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main */}
-      <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-8 py-8">
+      <main style={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 32px' }}>
           {children}
         </div>
       </main>
@@ -82,59 +71,36 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   )
 }
 
+function NavSection({ label }: { label: string }) {
+  return (
+    <div style={{ padding: '14px 10px 4px' }}>
+      <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--slate-dk)', fontFamily: 'var(--font-jetbrains-mono, monospace)' }}>{label}</span>
+    </div>
+  )
+}
+
 function NavLink({ href, icon, label, highlight }: { href: string; icon: React.ReactNode; label: string; highlight?: boolean }) {
   if (highlight) {
     return (
-      <Link
-        href={href}
-        className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-        style={{ background: 'rgba(201,162,75,0.10)', border: '1px solid rgba(201,162,75,0.18)', color: 'var(--gold-lt)' }}
-      >
-        <span style={{ color: 'var(--gold)' }}>{icon}</span>
-        {label}
+      <Link href={href} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: 'var(--gold-lt)', background: 'rgba(201,162,75,0.10)', border: '1px solid rgba(201,162,75,0.18)', textDecoration: 'none', overflow: 'hidden' }}>
+        <span style={{ color: 'var(--gold)', flexShrink: 0 }}>{icon}</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
       </Link>
     )
   }
   return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all"
-      style={{ color: 'var(--paper)' }}
-    >
-      <span style={{ color: 'var(--slate)' }}>{icon}</span>
-      {label}
+    <Link href={href} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, fontSize: 12, color: 'var(--paper)', textDecoration: 'none', overflow: 'hidden' }}>
+      <span style={{ color: 'var(--slate)', flexShrink: 0 }}>{icon}</span>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
     </Link>
   )
 }
 
-function HomeIcon() {
-  return (
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-    </svg>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-    </svg>
-  )
-}
-
-function ArchiveIcon() {
-  return (
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-    </svg>
-  )
-}
-
-function SignOutIcon() {
-  return (
-    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-    </svg>
-  )
-}
+function HomeIcon() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"/></svg> }
+function PlusIcon() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg> }
+function CalendarIcon() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V12zm0 3h.008v.008H12v-.008zm0 3h.008v.008H12v-.008zm-3-6h.008v.008H9.75V12zm0 3h.008v.008H9.75v-.008zm0 3h.008v.008H9.75v-.008zm6-6h.008v.008h-.008V12zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z"/></svg> }
+function NotesIcon() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg> }
+function TasksIcon() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> }
+function DocsIcon() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg> }
+function ArchiveIcon() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg> }
+function SignOutIcon() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg> }
