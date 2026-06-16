@@ -35,8 +35,8 @@ export default function BriefClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ meetingId: meeting.id }),
       })
-      if (!res.ok) throw new Error('Brief generation failed')
       const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Brief generation failed')
       setBrief(data.brief)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to generate brief')

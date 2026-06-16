@@ -21,7 +21,9 @@ export async function POST(req: Request) {
       ''
     )
   } catch (e: unknown) {
-    return NextResponse.json({ error: 'Claude API error: ' + (e instanceof Error ? e.message : 'unknown') }, { status: 502 })
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[/api/brief] OpenAI error:', msg)
+    return NextResponse.json({ error: msg }, { status: 502 })
   }
 
   await supabase.from('briefs').upsert({
