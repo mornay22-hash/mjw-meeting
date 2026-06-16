@@ -11,9 +11,7 @@ const inter = Inter({
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
   style: ["normal", "italic"],
-  axes: ["opsz"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
