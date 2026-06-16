@@ -1,26 +1,41 @@
 @import "tailwindcss";
 
+/* MJW Master Design System tokens */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --black:   #04060C;
+  --ink:     #070B15;
+  --ink2:    #0A1020;
+  --ink3:    #0F1728;
+  --gold:    #C9A24B;
+  --gold-lt: #EAD08A;
+  --gold-dk: #9A7A2E;
+  --blue:    #2E4D8F;
+  --blue-lt: #5A7FD6;
+  --paper:   #ECE8DD;
+  --slate:   #79839B;
+  --slate-dk:#4A5266;
+  --line:    rgba(236,232,221,0.08);
+  --line2:   rgba(236,232,221,0.04);
+
+  --serif: 'Fraunces', Georgia, serif;
+  --sans:  'Inter', system-ui, sans-serif;
+  --mono:  'JetBrains Mono', monospace;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--black);
+  --color-foreground: var(--paper);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  background: var(--black);
+  color: var(--paper);
+  font-family: var(--sans);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
