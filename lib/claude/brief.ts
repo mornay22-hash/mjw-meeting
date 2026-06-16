@@ -1,8 +1,6 @@
 import OpenAI from 'openai'
 import { BriefJSON } from '@/types'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
 export async function generateBrief(
   title: string,
   date: string,
@@ -11,6 +9,7 @@ export async function generateBrief(
   objectives: string,
   agendaItems: string[]
 ): Promise<BriefJSON> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     response_format: { type: 'json_object' },

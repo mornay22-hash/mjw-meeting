@@ -1,8 +1,6 @@
 import OpenAI from 'openai'
 import { MinutesJSON } from '@/types'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
 export async function draftMinutes(
   title: string,
   date: string,
@@ -10,6 +8,7 @@ export async function draftMinutes(
   attendees: string[],
   transcript: string
 ): Promise<MinutesJSON> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     response_format: { type: 'json_object' },
