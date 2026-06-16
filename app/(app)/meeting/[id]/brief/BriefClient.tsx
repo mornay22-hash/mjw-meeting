@@ -59,9 +59,18 @@ export default function BriefClient({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold tracking-[0.25em] text-white/25 uppercase mb-2">Pre-Meeting Brief</p>
-          <h1 className="text-2xl font-semibold text-white tracking-tight">{meeting.title}</h1>
-          <p className="text-sm text-white/35 mt-1.5">
+          <button
+            onClick={() => router.push('/')}
+            style={{ fontSize: 12, color: 'var(--slate)', marginBottom: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+            Dashboard
+          </button>
+          <p className="text-[10px] font-bold tracking-[0.25em] uppercase mb-2" style={{ color: 'var(--slate)' }}>Pre-Meeting Brief</p>
+          <h1 style={{ fontSize: 22, fontWeight: 400, color: 'var(--paper)', fontFamily: 'var(--font-fraunces, Georgia, serif)', letterSpacing: '-0.01em' }}>{meeting.title}</h1>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--slate)' }}>
             {dateStr}
             {meeting.attendees?.length > 0 && (
               <span className="before:content-['·'] before:mx-2 before:text-white/20">

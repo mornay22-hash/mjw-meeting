@@ -18,11 +18,9 @@ export default function MinutesClient({
   const supabase = createClient()
 
   const [drafting, setDrafting] = useState(false)
-  const [sending, setSending] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [savedAt, setSavedAt] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [sendError, setSendError] = useState('')
-  const [recipients, setRecipients] = useState('')
-  const [showSendForm, setShowSendForm] = useState(false)
 
   const [agenda, setAgenda] = useState(existingMinutes?.agenda || '')
   const [discussion, setDiscussion] = useState(existingMinutes?.discussion || '')
@@ -54,44 +52,99 @@ export default function MinutesClient({
   }
 
   async function saveMinutes() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('minutes').upsert({
-      meeting_id: meeting.id,
-      user_id: user.id,
-      agenda,
-      discussion,
-      decisions,
-      actions,
-      next_steps: nextSteps,
-    }, { onConflict: 'meeting_id' })
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { error: err } = await supabase.from('minutes').upsert({
+        meeting_id: meeting.id,
+        user_id: user.id,
+        agenda,
+        discussion,
+        decisions,
+        actions,
+        next_steps: nextSteps,
+      }, { onConflict: 'meeting_id' })
+      if (err) throw err
+      setSavedAt(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }))
+    } catch {
+      setError('Save failed. Please try again.')
+    }
+    setSaving(false)
   }
 
-  async function handleSend() {
-    if (!recipients.trim()) { setSendError('Enter at least one recipient email'); return }
-    setSending(true)
-    setSendError('')
+  function downloadPDF() {
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    const dateStr = new Date(meeting.meeting_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    printWindow.document.write(`
+      <!DOCTYPE html><html><head>
+      <title>Minutes — ${meeting.title}</title>
+      <style>
+        body { font-family: Georgia, serif; max-width: 700px; margin: 40px auto; color: #111; font-size: 13px; line-height: 1.7; }
+        h1 { font-size: 22px; font-weight: 400; border-bottom: 1px solid #ccc; padding-bottom: 12px; margin-bottom: 6px; }
+        .meta { color: #666; font-size: 12px; margin-bottom: 32px; }
+        h2 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.2em; color: #888; margin: 28px 0 8px; font-family: Arial, sans-serif; }
+        p, pre { margin: 0 0 8px; white-space: pre-wrap; font-family: Georgia, serif; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+        th { text-align: left; border-bottom: 1px solid #ddd; padding: 6px 8px; color: #888; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+        td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; }
+        @media print { body { margin: 20px; } }
+      </style>
+      </head><body>
+      <h1>${meeting.title}</h1>
+      <div class="meta">${dateStr}${meeting.attendees?.length ? ' &nbsp;·&nbsp; ' + meeting.attendees.join(', ') : ''}</div>
+      ${agenda ? `<h2>Agenda</h2><p>${agenda}</p>` : ''}
+      ${discussion ? `<h2>Discussion Summary</h2><p>${discussion}</p>` : ''}
+      ${decisions ? `<h2>Decisions Made</h2><p>${decisions}</p>` : ''}
+      ${actions.length > 0 ? `<h2>Action Items</h2>
+        <table><tr><th>Action</th><th>Owner</th><th>Due</th></tr>
+        ${actions.map(a => `<tr><td>${a.item}</td><td>${a.owner}</td><td>${a.due_date}</td></tr>`).join('')}
+        </table>` : ''}
+      ${nextSteps ? `<h2>Next Steps</h2><p>${nextSteps}</p>` : ''}
+      </body></html>
+    `)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => { printWindow.print() }, 400)
+  }
 
-    await saveMinutes()
+  function downloadWord() {
+    const dateStr = new Date(meeting.meeting_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    const actionRows = actions.map(a =>
+      `<tr><td style="border:1px solid #ccc;padding:6px">${a.item}</td><td style="border:1px solid #ccc;padding:6px">${a.owner}</td><td style="border:1px solid #ccc;padding:6px">${a.due_date}</td></tr>`
+    ).join('')
 
-    const res = await fetch('/api/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        meetingId: meeting.id,
-        recipients: recipients.split(',').map(r => r.trim()).filter(Boolean),
-      }),
-    })
-
-    if (!res.ok) {
-      const d = await res.json()
-      setSendError(d.error || 'Send failed. Draft preserved.')
-      setSending(false)
-      return
-    }
-
-    await supabase.from('meetings').update({ status: 'archived' }).eq('id', meeting.id)
-    router.push('/archive')
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+      <head><meta charset="utf-8"><title>Minutes</title>
+      <style>
+        body { font-family: Calibri, sans-serif; font-size: 11pt; margin: 1cm; }
+        h1 { font-size: 18pt; font-weight: bold; border-bottom: 1pt solid #999; padding-bottom: 6pt; }
+        .meta { color: #666; font-size: 10pt; margin-bottom: 20pt; }
+        h2 { font-size: 9pt; text-transform: uppercase; letter-spacing: 2pt; color: #888; margin-top: 16pt; }
+        p { font-size: 11pt; white-space: pre-wrap; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f0f0f0; border: 1px solid #ccc; padding: 6pt; font-size: 9pt; text-align: left; }
+      </style>
+      </head><body>
+      <h1>${meeting.title}</h1>
+      <div class="meta">${dateStr}${meeting.attendees?.length ? ' · ' + meeting.attendees.join(', ') : ''}</div>
+      ${agenda ? `<h2>Agenda</h2><p>${agenda}</p>` : ''}
+      ${discussion ? `<h2>Discussion Summary</h2><p>${discussion}</p>` : ''}
+      ${decisions ? `<h2>Decisions Made</h2><p>${decisions}</p>` : ''}
+      ${actions.length > 0 ? `<h2>Action Items</h2>
+        <table><tr><th>Action</th><th>Owner</th><th>Due</th></tr>${actionRows}</table>` : ''}
+      ${nextSteps ? `<h2>Next Steps</h2><p>${nextSteps}</p>` : ''}
+      </body></html>
+    `
+    const blob = new Blob([html], { type: 'application/msword' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${meeting.title.replace(/\s+/g, '_')}_Minutes.doc`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   function updateAction(i: number, field: keyof ActionItem, value: string) {
@@ -105,109 +158,83 @@ export default function MinutesClient({
   }
 
   const hasDraft = agenda || discussion || decisions || actions.length > 0
+  const dateStr = new Date(meeting.meeting_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 
   return (
     <div className="max-w-2xl space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold tracking-[0.25em] text-white/25 uppercase mb-2">Meeting Minutes</p>
-          <h1 className="text-2xl font-semibold text-white tracking-tight">{meeting.title}</h1>
-          <p className="text-sm text-white/35 mt-1.5">
-            {new Date(meeting.meeting_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            {meeting.attendees?.length > 0 && (
-              <span className="before:content-['·'] before:mx-2 before:text-white/20">
-                {meeting.attendees.join(', ')}
-              </span>
-            )}
+          <button
+            onClick={() => router.push('/')}
+            style={{ fontSize: 12, color: 'var(--slate)', marginBottom: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+            Dashboard
+          </button>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.22em', color: 'var(--slate)', textTransform: 'uppercase', fontFamily: 'var(--font-jetbrains-mono, monospace)', marginBottom: 8 }}>Meeting Minutes</p>
+          <h1 style={{ fontSize: 22, fontWeight: 400, color: 'var(--paper)', fontFamily: 'var(--font-fraunces, Georgia, serif)', letterSpacing: '-0.01em' }}>{meeting.title}</h1>
+          <p style={{ fontSize: 13, color: 'var(--slate)', marginTop: 4 }}>
+            {dateStr}
+            {meeting.attendees?.length > 0 && <span style={{ marginLeft: 8, color: 'var(--slate-dk)' }}>· {meeting.attendees.join(', ')}</span>}
           </p>
         </div>
         {!hasDraft && hasTranscript && (
           <button
             onClick={draftMinutes}
             disabled={drafting}
-            className="shrink-0 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, background: 'linear-gradient(120deg, var(--gold-lt), var(--gold))', color: '#000', fontSize: 13, fontWeight: 600, padding: '9px 16px', borderRadius: 10, border: 'none', cursor: drafting ? 'not-allowed' : 'pointer', opacity: drafting ? 0.7 : 1 }}
           >
             {drafting ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Drafting…
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                </svg>
-                Draft with AI
-              </>
-            )}
+              <><span style={{ width: 14, height: 14, border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#000', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />Drafting…</>
+            ) : 'Draft with AI'}
           </button>
         )}
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
-          <p className="text-sm text-red-300">{error}</p>
+        <div style={{ background: 'rgba(224,92,92,0.1)', border: '1px solid rgba(224,92,92,0.25)', borderRadius: 10, padding: '12px 16px' }}>
+          <p style={{ fontSize: 13, color: '#e05c5c' }}>{error}</p>
         </div>
       )}
 
       {/* No transcript state */}
       {!hasDraft && !hasTranscript && (
-        <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-8 text-center">
-          <p className="text-white/50 text-sm">No transcript found.</p>
-          <p className="text-white/25 text-sm mt-1">Start typing minutes manually below.</p>
+        <div style={{ borderRadius: 12, border: '1px solid rgba(236,232,221,0.1)', background: 'var(--ink2)', padding: '32px', textAlign: 'center' }}>
+          <p style={{ color: 'var(--slate)', fontSize: 13 }}>No transcript found.</p>
+          <p style={{ color: 'var(--slate-dk)', fontSize: 12, marginTop: 4 }}>Start typing minutes manually below.</p>
         </div>
       )}
 
       {/* Minutes form */}
       {(hasDraft || !hasTranscript) && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <MinutesField label="Agenda" value={agenda} onChange={setAgenda} rows={3} />
           <MinutesField label="Discussion Summary" value={discussion} onChange={setDiscussion} rows={5} />
           <MinutesField label="Decisions Made" value={decisions} onChange={setDecisions} rows={4} />
 
           {/* Action Items */}
-          <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-bold tracking-widest text-white/35 uppercase">Action Items</h3>
-              <button
-                onClick={addAction}
-                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
+          <div style={{ borderRadius: 12, background: 'var(--ink2)', border: '1px solid rgba(236,232,221,0.1)', padding: '18px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--slate)', fontFamily: 'var(--font-jetbrains-mono, monospace)' }}>Action Items</h3>
+              <button onClick={addAction} style={{ fontSize: 12, color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 Add item
               </button>
             </div>
             {actions.length === 0 && (
-              <p className="text-sm text-white/20 py-2">No action items yet</p>
+              <p style={{ fontSize: 12, color: 'var(--slate-dk)', paddingBottom: 4 }}>No action items yet</p>
             )}
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {actions.map((a, i) => (
-                <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center bg-white/[0.03] border border-white/5 rounded-xl px-3 py-2.5">
-                  <input
-                    value={a.item}
-                    onChange={e => updateAction(i, 'item', e.target.value)}
-                    placeholder="Action item"
-                    className="bg-transparent text-sm text-white/80 placeholder-white/20 focus:outline-none"
-                  />
-                  <input
-                    value={a.owner}
-                    onChange={e => updateAction(i, 'owner', e.target.value)}
-                    placeholder="Owner"
-                    className="bg-transparent text-sm text-white/40 placeholder-white/20 focus:outline-none w-24"
-                  />
-                  <input
-                    type="date"
-                    value={a.due_date}
-                    onChange={e => updateAction(i, 'due_date', e.target.value)}
-                    className="bg-transparent text-sm text-white/40 focus:outline-none w-32 [color-scheme:dark]"
-                  />
-                  <button onClick={() => removeAction(i)} className="text-white/15 hover:text-red-400 transition-colors">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 8, alignItems: 'center', background: 'var(--ink3)', border: '1px solid rgba(236,232,221,0.08)', borderRadius: 8, padding: '8px 12px' }}>
+                  <input value={a.item} onChange={e => updateAction(i, 'item', e.target.value)} placeholder="Action item" style={{ background: 'transparent', border: 'none', fontSize: 13, color: 'var(--paper)', outline: 'none' }} />
+                  <input value={a.owner} onChange={e => updateAction(i, 'owner', e.target.value)} placeholder="Owner" style={{ background: 'transparent', border: 'none', fontSize: 12, color: 'var(--slate)', outline: 'none', width: 90 }} />
+                  <input type="date" value={a.due_date} onChange={e => updateAction(i, 'due_date', e.target.value)} style={{ background: 'transparent', border: 'none', fontSize: 12, color: 'var(--slate)', outline: 'none', width: 120, colorScheme: 'dark' }} />
+                  <button onClick={() => removeAction(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate-dk)', padding: 2 }}>
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 </div>
               ))}
@@ -217,94 +244,68 @@ export default function MinutesClient({
           <MinutesField label="Next Steps" value={nextSteps} onChange={setNextSteps} rows={3} />
 
           {/* Actions bar */}
-          <div className="flex gap-3 pt-1">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4, flexWrap: 'wrap' }}>
             <button
               onClick={saveMinutes}
-              className="bg-white/5 hover:bg-white/8 text-white/60 hover:text-white/80 text-sm px-4 py-2.5 rounded-xl transition-all border border-white/5"
+              disabled={saving}
+              style={{ fontSize: 13, fontWeight: 600, color: 'var(--paper)', background: 'var(--ink3)', border: '1px solid rgba(236,232,221,0.12)', borderRadius: 8, padding: '9px 16px', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
             >
-              Save draft
+              {saving ? 'Saving…' : 'Save draft'}
             </button>
+
+            {savedAt && (
+              <span style={{ fontSize: 11, color: 'var(--slate)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: '#4caf82' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                Saved {savedAt}
+              </span>
+            )}
+
             {hasDraft && (
               <button
                 onClick={draftMinutes}
                 disabled={drafting}
-                className="bg-white/5 hover:bg-white/8 text-white/60 hover:text-white/80 text-sm px-4 py-2.5 rounded-xl transition-all border border-white/5 disabled:opacity-50"
+                style={{ fontSize: 13, color: 'var(--slate)', background: 'none', border: '1px solid rgba(236,232,221,0.1)', borderRadius: 8, padding: '9px 14px', cursor: drafting ? 'not-allowed' : 'pointer', opacity: drafting ? 0.7 : 1 }}
               >
                 {drafting ? 'Regenerating…' : 'Regenerate'}
               </button>
             )}
-            <button
-              onClick={() => setShowSendForm(true)}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20 ml-auto"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-              </svg>
-              Send minutes
-            </button>
-          </div>
 
-          {/* Send form */}
-          {showSendForm && (
-            <div className="rounded-2xl bg-white/[0.03] border border-indigo-500/20 p-5 space-y-4">
-              <h3 className="text-sm font-semibold text-white">Send minutes via email</h3>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold tracking-widest text-white/30 uppercase">Recipients</label>
-                <input
-                  value={recipients}
-                  onChange={e => setRecipients(e.target.value)}
-                  placeholder="email@example.com, another@example.com"
-                  className="w-full bg-white/[0.04] border border-white/8 focus:border-indigo-500/50 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all"
-                />
-              </div>
-              {sendError && <p className="text-sm text-red-400">{sendError}</p>}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowSendForm(false)}
-                  className="bg-white/5 hover:bg-white/8 text-white/60 text-sm px-4 py-2.5 rounded-xl transition-all border border-white/5"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSend}
-                  disabled={sending}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20"
-                >
-                  {sending ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Sending…
-                    </>
-                  ) : 'Confirm send'}
-                </button>
-              </div>
+            {/* Download buttons */}
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+              <button
+                onClick={downloadWord}
+                style={{ fontSize: 13, fontWeight: 600, color: 'var(--paper)', background: 'rgba(90,127,214,0.15)', border: '1px solid rgba(90,127,214,0.3)', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                Word
+              </button>
+              <button
+                onClick={downloadPDF}
+                style={{ fontSize: 13, fontWeight: 600, color: '#000', background: 'linear-gradient(120deg, var(--gold-lt), var(--gold))', border: 'none', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                PDF
+              </button>
             </div>
-          )}
+          </div>
         </div>
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
 
-function MinutesField({
-  label,
-  value,
-  onChange,
-  rows = 3,
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  rows?: number
-}) {
+function MinutesField({ label, value, onChange, rows = 3 }: { label: string; value: string; onChange: (v: string) => void; rows?: number }) {
   return (
-    <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-5 space-y-3">
-      <h3 className="text-[10px] font-bold tracking-widest text-white/35 uppercase">{label}</h3>
+    <div style={{ borderRadius: 12, background: 'var(--ink2)', border: '1px solid rgba(236,232,221,0.1)', padding: '18px 20px' }}>
+      <h3 style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--slate)', fontFamily: 'var(--font-jetbrains-mono, monospace)', marginBottom: 12 }}>{label}</h3>
       <textarea
         value={value}
         onChange={e => onChange(e.target.value)}
         rows={rows}
-        className="w-full bg-transparent text-sm text-white/70 placeholder-white/15 resize-none focus:outline-none"
+        placeholder={`Enter ${label.toLowerCase()}…`}
+        style={{ width: '100%', background: 'transparent', border: 'none', fontSize: 13, color: 'var(--paper)', resize: 'vertical', outline: 'none', lineHeight: 1.7, boxSizing: 'border-box' }}
       />
     </div>
   )

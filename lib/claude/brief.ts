@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import { BriefJSON } from '@/types'
 
-const openai = new OpenAI({ apiKey: process.env.ANTHROPIC_API_KEY })
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function generateBrief(
   title: string,

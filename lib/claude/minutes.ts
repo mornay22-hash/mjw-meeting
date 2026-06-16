@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import { MinutesJSON } from '@/types'
 
-const openai = new OpenAI({ apiKey: process.env.ANTHROPIC_API_KEY })
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function draftMinutes(
   title: string,
