@@ -8,6 +8,7 @@ export default async function TasksPage() {
     .from('tasks')
     .select('*, meetings(title)')
     .eq('user_id', user!.id)
+    .eq('archived', false)
     .order('due_date', { ascending: true, nullsFirst: false })
   return <TasksClient initialTasks={tasks || []} />
 }

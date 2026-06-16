@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 
-interface Note { id: string; title: string; body: string; tag: string | null; updated_at: string }
+interface Note { id: string; title: string; body: string; tag: string | null; updated_at: string; archived?: boolean }
 
 export default function NotesClient({ initialNotes }: { initialNotes: Note[] }) {
   const supabase = createClient()
@@ -37,9 +37,9 @@ export default function NotesClient({ initialNotes }: { initialNotes: Note[] }) 
     setSaving(false)
   }
 
-  async function deleteNote() {
+  async function archiveNote() {
     if (!selected) return
-    await supabase.from('notes').delete().eq('id', selected.id)
+    await supabase.from('notes').update({ archived: true }).eq('id', selected.id)
     const remaining = notes.filter(n => n.id !== selected.id)
     setNotes(remaining)
     if (remaining[0]) { selectNote(remaining[0]) } else { setSelected(null); setTitle(''); setBody(''); setTag('') }
@@ -105,7 +105,7 @@ export default function NotesClient({ initialNotes }: { initialNotes: Note[] }) 
               <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                 <button onClick={exportWord} style={{ fontSize: 12, color: 'var(--paper)', background: 'rgba(90,127,214,0.15)', border: '1px solid rgba(90,127,214,0.25)', borderRadius: 7, padding: '7px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Word</button>
                 <button onClick={exportPDF} style={{ fontSize: 12, fontWeight: 600, color: '#000', background: 'linear-gradient(120deg,var(--gold-lt),var(--gold))', border: 'none', borderRadius: 7, padding: '7px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>PDF</button>
-                <button onClick={deleteNote} style={{ fontSize: 12, color: '#e05c5c', background: 'rgba(224,92,92,0.08)', border: '1px solid rgba(224,92,92,0.18)', borderRadius: 7, padding: '7px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Delete</button>
+                <button onClick={archiveNote} style={{ fontSize: 12, color: 'var(--slate)', background: 'var(--ink3)', border: '1px solid rgba(236,232,221,0.12)', borderRadius: 7, padding: '7px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Archive</button>
               </div>
             </div>
           </div>

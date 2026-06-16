@@ -31,8 +31,14 @@ export default function TasksClient({ initialTasks }: { initialTasks: Task[] }) 
 
   async function toggleDone(t: Task) {
     const newStatus = t.status === 'done' ? 'open' : 'done'
-    await supabase.from('tasks').update({ status: newStatus }).eq('id', t.id)
-    setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: newStatus } : x))
+    const updates: Record<string, unknown> = { status: newStatus }
+    if (newStatus === 'done') updates.archived = true
+    await supabase.from('tasks').update(updates).eq('id', t.id)
+    if (newStatus === 'done') {
+      setTasks(prev => prev.filter(x => x.id !== t.id))
+    } else {
+      setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: newStatus } : x))
+    }
   }
 
   async function deleteTask(id: string) {

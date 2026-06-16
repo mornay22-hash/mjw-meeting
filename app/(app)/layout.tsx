@@ -18,10 +18,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* Brand */}
         <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--line)' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <img src="/mjw-logo.png" alt="MJW" width={30} height={30} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            <div style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, position: 'relative', background: 'linear-gradient(135deg, #c8a94a, #e8c96a)', border: '2px solid rgba(201,162,75,0.6)', boxShadow: '0 0 14px rgba(201,162,75,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <img src="/mjw-logo.png" alt="MJW" width={34} height={34} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            </div>
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--paper)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>MJW Meeting</p>
-              <p style={{ fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--slate-dk)', margin: 0, fontFamily: 'var(--font-jetbrains-mono, monospace)' }}>Meeting Command</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--paper)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>MJW Meeting</p>
+              <p style={{ fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--gold)', margin: 0, fontFamily: 'var(--font-jetbrains-mono, monospace)', opacity: 0.75 }}>Meeting Command</p>
             </div>
           </Link>
         </div>

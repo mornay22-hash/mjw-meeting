@@ -8,6 +8,7 @@ export default async function NotesPage() {
     .from('notes')
     .select('*')
     .eq('user_id', user!.id)
+    .eq('archived', false)
     .order('updated_at', { ascending: false })
   return <NotesClient initialNotes={notes || []} />
 }
