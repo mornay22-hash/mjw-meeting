@@ -1,4 +1,6 @@
 import { headers } from 'next/headers'
+import fs from 'fs'
+import path from 'path'
 
 export default async function LoginPage() {
   const headersList = await headers()
@@ -16,98 +18,85 @@ export default async function LoginPage() {
 
   const oauthUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&scopes=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent`
 
+  // Embed logo as base64 — guaranteed to render, no static-file-serving dependency
+  const logoPath = path.join(process.cwd(), 'public', 'mjw-logo.png')
+  const logoSrc = fs.existsSync(logoPath)
+    ? `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}`
+    : null
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--black)' }}>
-      {/* Ambient glow */}
-      <div style={{
-        position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none',
-      }}>
-        <div style={{
-          position: 'absolute', top: '35%', left: '50%', transform: 'translate(-50%,-50%)',
-          width: 500, height: 500,
-          background: 'radial-gradient(circle, rgba(201,162,75,0.06) 0%, transparent 70%)',
-        }} />
-      </div>
+    <div style={{ minHeight: '100vh', background: 'var(--black)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ width: '100%', maxWidth: 380 }}>
 
-      <div className="relative w-full max-w-sm">
-        {/* Brand */}
-        <div className="text-center mb-10">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/mjw-logo.png"
-            alt="MJW"
-            width={72}
-            height={72}
-            className="rounded-full mx-auto mb-6 block"
-            style={{ objectFit: 'cover' }}
-          />
-          <h1 style={{ fontSize: 28, fontWeight: 300, color: 'var(--paper)', fontFamily: 'var(--font-fraunces, Georgia, serif)', letterSpacing: '-0.02em' }}>
-            MJW <em style={{ color: 'var(--gold-lt)', fontStyle: 'italic' }}>Meeting</em>
-          </h1>
-          <p className="mt-2" style={{ fontSize: 13, color: 'var(--slate)', letterSpacing: '0.03em' }}>
-            No Noise. Just Signal.
-          </p>
-        </div>
-
-        {/* Login card */}
+        {/* Card */}
         <div style={{
           background: 'var(--ink2)',
           border: '1px solid var(--line)',
           borderRadius: 16,
-          padding: '28px 24px',
+          overflow: 'hidden',
         }}>
-          <div className="mb-6">
-            <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--paper)', marginBottom: 4 }}>Sign in to continue</h2>
-            <p style={{ fontSize: 12, color: 'var(--slate-dk)' }}>Access your meeting workspace with Google</p>
+          {/* Card header — logo + product name */}
+          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            {logoSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoSrc}
+                alt="MJW"
+                style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--line)' }}
+              />
+            ) : (
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, var(--gold-dk), var(--gold))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#000' }}>MJW</span>
+              </div>
+            )}
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--paper)', margin: 0, lineHeight: 1.2 }}>MJW Meeting</p>
+              <p style={{ fontSize: 10, color: 'var(--slate-dk)', margin: 0, marginTop: 2, letterSpacing: '0.05em' }}>No Noise. Just Signal.</p>
+            </div>
           </div>
 
-          <a
-            href={oauthUrl}
-            className="flex items-center gap-3 w-full transition-opacity hover:opacity-90 active:scale-[0.99]"
-            style={{
-              background: '#fff',
-              borderRadius: 12,
-              padding: '12px 16px',
-              textDecoration: 'none',
-              boxShadow: '0 2px 16px rgba(0,0,0,0.4)',
-            }}
-          >
-            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            <span style={{ flex: 1, textAlign: 'center', fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>
-              Sign in with Google
-            </span>
-          </a>
+          {/* Card body */}
+          <div style={{ padding: '28px 24px 24px' }}>
+            <h1 style={{ fontSize: 22, fontWeight: 300, color: 'var(--paper)', margin: '0 0 4px', fontFamily: 'var(--font-fraunces, Georgia, serif)', letterSpacing: '-0.01em' }}>
+              Sign in
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--slate)', margin: '0 0 24px' }}>
+              Access your meeting workspace with Google.
+            </p>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-5">
-            <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-            <span style={{ fontSize: 10, color: 'var(--slate-dk)', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'var(--font-jetbrains-mono, monospace)' }}>
-              Secure access
-            </span>
-            <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-          </div>
+            {/* Google sign-in button */}
+            <a
+              href={oauthUrl}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                width: '100%',
+                padding: '12px 16px',
+                background: '#fff',
+                borderRadius: 10,
+                textDecoration: 'none',
+                boxSizing: 'border-box',
+                boxShadow: '0 1px 8px rgba(0,0,0,0.3)',
+                transition: 'opacity 0.15s',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Sign in with Google</span>
+            </a>
 
-          {/* Features */}
-          <div className="flex justify-center gap-5">
-            {['Calendar', 'Email minutes', 'Drive'].map(f => (
-              <span key={f} className="flex items-center gap-1" style={{ fontSize: 11, color: 'var(--slate-dk)' }}>
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} style={{ color: 'var(--gold-dk)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                {f}
-              </span>
-            ))}
+            <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--slate-dk)' }}>
+              MJW Environment — Confidential
+            </p>
           </div>
         </div>
 
-        <p className="text-center mt-6" style={{ fontSize: 11, color: 'var(--slate-dk)', letterSpacing: '0.05em' }}>
-          MJW Environment — Confidential
-        </p>
       </div>
     </div>
   )
