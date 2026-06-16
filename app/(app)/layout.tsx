@@ -43,7 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <NavLink href="/" icon={<HomeIcon />} label="Dashboard" />
           <NavLink href="/meeting/new" icon={<PlusIcon />} label="New Meeting" highlight />
           <div className="pt-5 pb-1.5 px-2">
-            <span className="text-[9px] font-semibold tracking-[0.22em] uppercase" style={{ color: 'var(--slate-dk)', fontFamily: 'var(--font-jetbrains-mono, monospace)' }}>
+            <span className="text-[9px] font-semibold tracking-[0.22em] uppercase" style={{ color: 'var(--slate)', fontFamily: 'var(--font-jetbrains-mono, monospace)' }}>
               Workspace
             </span>
           </div>
@@ -61,7 +61,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate" style={{ color: 'var(--slate)' }}>{name}</p>
+              <p className="text-xs font-medium truncate" style={{ color: 'var(--paper)' }}>{name}</p>
             </div>
             <form action="/api/auth/signout" method="POST">
               <button type="submit" title="Sign out" style={{ color: 'var(--slate-dk)' }}>
@@ -99,9 +99,9 @@ function NavLink({ href, icon, label, highlight }: { href: string; icon: React.R
     <Link
       href={href}
       className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all"
-      style={{ color: 'var(--slate)' }}
+      style={{ color: 'var(--paper)' }}
     >
-      <span style={{ color: 'var(--slate-dk)' }}>{icon}</span>
+      <span style={{ color: 'var(--slate)' }}>{icon}</span>
       {label}
     </Link>
   )
