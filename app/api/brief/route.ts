@@ -9,7 +9,12 @@ export async function POST(req: Request) {
 
   const { meetingId } = await req.json()
 
-  const { data: meeting } = await supabase.from('meetings').select('*').eq('id', meetingId).eq('user_id', user.id).single()
+  const { data: meeting } = await supabase
+    .from('meetings')
+    .select('*')
+    .eq('id', meetingId)
+    .eq('user_id', user.id)
+    .single()
   if (!meeting) return NextResponse.json({ error: 'Meeting not found' }, { status: 404 })
 
   let brief
@@ -18,7 +23,9 @@ export async function POST(req: Request) {
       meeting.title,
       meeting.meeting_date,
       meeting.attendees || [],
-      ''
+      meeting.description || '',
+      meeting.objectives || '',
+      meeting.agenda_items || []
     )
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
