@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -20,7 +19,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* Brand */}
         <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--line)' }}>
           <Link href="/" className="flex items-center gap-3">
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/mjw-logo.png"
               alt="MJW"
               width={32}

@@ -1,5 +1,4 @@
 import { headers } from 'next/headers'
-import Image from 'next/image'
 
 export default async function LoginPage() {
   const headersList = await headers()
@@ -33,20 +32,17 @@ export default async function LoginPage() {
       <div className="relative w-full max-w-sm">
         {/* Brand */}
         <div className="text-center mb-10">
-          <div className="mx-auto mb-6" style={{ width: 64, height: 64 }}>
-            <Image
-              src="/mjw-logo.png"
-              alt="MJW"
-              width={64}
-              height={64}
-              className="rounded-full object-cover"
-            />
-          </div>
-          <p className="mb-1" style={{ fontSize: 10, letterSpacing: '0.32em', color: 'var(--slate-dk)', fontFamily: 'var(--font-jetbrains-mono, monospace)', textTransform: 'uppercase' }}>
-            MJW
-          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/mjw-logo.png"
+            alt="MJW"
+            width={72}
+            height={72}
+            className="rounded-full mx-auto mb-6 block"
+            style={{ objectFit: 'cover' }}
+          />
           <h1 style={{ fontSize: 28, fontWeight: 300, color: 'var(--paper)', fontFamily: 'var(--font-fraunces, Georgia, serif)', letterSpacing: '-0.02em' }}>
-            Meeting <em style={{ color: 'var(--gold-lt)', fontStyle: 'italic' }}>Command</em>
+            MJW <em style={{ color: 'var(--gold-lt)', fontStyle: 'italic' }}>Meeting</em>
           </h1>
           <p className="mt-2" style={{ fontSize: 13, color: 'var(--slate)', letterSpacing: '0.03em' }}>
             No Noise. Just Signal.
