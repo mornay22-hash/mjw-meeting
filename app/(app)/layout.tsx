@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import LogoImage from './LogoImage'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -19,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--line)' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <div style={{ width: 34, height: 34, borderRadius: '50%', flexShrink: 0, position: 'relative', background: 'linear-gradient(135deg, #c8a94a, #e8c96a)', border: '2px solid rgba(201,162,75,0.6)', boxShadow: '0 0 14px rgba(201,162,75,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              <img src="/mjw-logo.png" alt="MJW" width={34} height={34} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              <LogoImage />
             </div>
             <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--paper)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>MJW Meeting</p>
